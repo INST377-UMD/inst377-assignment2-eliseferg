@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang>
+<head>
+  <title>Dogs</title>
+  <link rel="stylesheet" href="https://unpkg.com/simple-slider@1.0.3/dist/simple-slider.css">
+  <style>
+    body { font-family: Arial, sans-serif; background-color: #f0f8ff; margin: 0; padding: 0; }
+    
+    /* Navigation */
+    nav {
+      background-color: #333;
+      padding: 10px;
+    }
+    nav a {
+      color: white;
+      margin: 0 15px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    nav a:hover {
+      text-decoration: underline;
+    }
+
+    .container { padding: 20px; }
+
+    /* Carousel */
+    .slider img {
+      width: 100%;
+      height: 400px;
+      object-fit: cover;
+    }
+
+    /* Buttons */
+    #breed-buttons button {
+      margin: 5px;
+      padding: 10px 15px;
+      background: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    /* Info */
+    #breed-info {
+      margin-top: 20px;
+      display: none;
+      border: 1px solid #ccc;
+      padding: 10px;
+      background: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav>
+    <a href="home.html">Home</a>
+    <a href="stocks.html">Stocks</a>
+    <a href="dogs.html">Dogs</a>
+  </nav>
+
+  <div class="container">
+    <h1>Dog Carousel</h1>
+    <div class="slider" id="dog-carousel"></div>
+
+    <h2>Dog Breeds</h2>
+    <div id="breed-buttons"></div>
+
+    <div id="breed-info"></div>
+  </div>
+
+  <script src="https://unpkg.com/simple-slider@1.0.3/dist/simple-slider.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/annyang/2.6.1/annyang.min.js"></script>
+  <script>
+    async function loadCarousel() {
+      const res = await fetch('https://dog.ceo/api/breeds/image/random/10');
+      const data = await res.json();
+      const carousel = document.getElementById('dog-carousel');
+      carousel.innerHTML = '';
+      data.message.forEach(img => {
+        const image = document.createElement('img');
+        image.src = img;
+        image.alt = "Dog image";
+        carousel.appendChild(image);
+      });
+      new SimpleSlider('#dog-carousel', { interval: 3000 });
+    }
+
+    async function loadBreeds() {
+      const res = await fetch('https://api.thedogapi.com/v1/breeds');
+      const data = await res.json();
+      const container = document.getElementById('breed-buttons');
+
+      data.forEach(breed => {
+        const btn = document.createElement('button');
+        btn.textContent = breed.name;
+        btn.addEventListener('click', () => showBreedInfo(breed));
+        btn.setAttribute('data-name', breed.name.toLowerCase());
+        container.appendChild(btn);
+      });
+
+      // Voice Command
+      if (annyang) {
+        const commands = {
+          'load dog breed *name': (name) => {
+            const match = data.find(b => b.name.toLowerCase() === name.toLowerCase());
+            if (match) showBreedInfo(match);
+          }
+        };
+        annyang.addCommands(commands);
+        annyang.start();
+      }
+    }
+
+    function showBreedInfo(breed) {
+      const info = document.getElementById('breed-info');
+      info.innerHTML = `
+        <h3>${breed.name}</h3>
+        <p>${breed.bred_for || 'No description'}</p>
+        <p><strong>Lifespan:</strong> ${breed.life_span}</p>
+      `;
+      info.style.display = 'block';
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCarousel();
+      loadBreeds();
+    });
+  </script>
+</body>
+</html>
